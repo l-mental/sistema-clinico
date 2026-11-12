@@ -15,7 +15,7 @@ import {
   ShieldCheck,
   CheckCircle2
 } from 'lucide-react';
-import { Patient } from '../types/hospital';
+import { Patient, AuthUser } from '../types/hospital';
 
 interface HeaderProps {
   onOpenNewPatient: () => void;
@@ -26,6 +26,8 @@ interface HeaderProps {
   activeCenter: string;
   setActiveCenter: (center: string) => void;
   onNavigateHome: () => void;
+  currentUser: AuthUser | null;
+  onLogout: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -36,7 +38,9 @@ export const Header: React.FC<HeaderProps> = ({
   patients,
   activeCenter,
   setActiveCenter,
-  onNavigateHome
+  onNavigateHome,
+  currentUser,
+  onLogout
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchResults, setShowSearchResults] = useState(false);
@@ -265,15 +269,15 @@ export const Header: React.FC<HeaderProps> = ({
             className="flex items-center gap-2.5 p-1 pl-1.5 sm:pr-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200/80 rounded-xl transition-colors cursor-pointer"
           >
             <div className="w-7 h-7 rounded-lg bg-sky-700 text-white flex items-center justify-center font-bold text-xs shadow-xs">
-              GH
+              {currentUser?.avatar || 'GH'}
             </div>
             <div className="hidden sm:block text-left">
               <div className="text-xs font-bold text-slate-800 flex items-center gap-1">
-                <span>Dr. Gonzalo Huanca</span>
+                <span>{currentUser ? `${currentUser.nombre} ${currentUser.apellidos}` : 'Dr. Gonzalo Huanca'}</span>
                 <ShieldCheck className="w-3.5 h-3.5 text-sky-600 inline" />
               </div>
               <div className="text-[10px] text-slate-500 font-medium">
-                Oftalmólogo · Admin
+                {currentUser?.rol || 'Oftalmólogo · Admin'}
               </div>
             </div>
             <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
@@ -282,9 +286,14 @@ export const Header: React.FC<HeaderProps> = ({
           {showUserMenu && (
             <div className="absolute right-0 mt-2 w-64 bg-white border border-slate-200 rounded-xl shadow-2xl py-1.5 z-50">
               <div className="px-4 py-2.5 border-b border-slate-100">
-                <p className="text-xs font-bold text-slate-800">Dr. Gonzalo Huanca Luna</p>
-                <p className="text-[11px] text-slate-500">Médico Cirujano Oftalmólogo</p>
-                <p className="text-[10px] font-mono text-sky-600 mt-0.5">Colegiado CMP: 49812 · RNE: 24190</p>
+                <p className="text-xs font-bold text-slate-800">
+                  {currentUser ? `${currentUser.nombre} ${currentUser.apellidos}` : 'Dr. Gonzalo Huanca Luna'}
+                </p>
+                <p className="text-[11px] text-slate-500">{currentUser?.rol || 'Médico Cirujano Oftalmólogo'}</p>
+                {currentUser?.colegiatura && (
+                  <p className="text-[10px] font-mono text-sky-600 mt-0.5">Colegiado {currentUser.colegiatura}</p>
+                )}
+                <p className="text-[10px] text-slate-400 truncate mt-0.5">{currentUser?.email}</p>
               </div>
               <div className="py-1">
                 <button
@@ -292,7 +301,7 @@ export const Header: React.FC<HeaderProps> = ({
                     setShowUserMenu(false);
                     onOpenNewPatient();
                   }}
-                  className="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-sky-50 flex items-center gap-2.5"
+                  className="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-sky-50 flex items-center gap-2.5 cursor-pointer"
                 >
                   <UserPlus className="w-3.5 h-3.5 text-slate-400" />
                   <span>Registrar Nuevo Paciente</span>
@@ -302,7 +311,7 @@ export const Header: React.FC<HeaderProps> = ({
                     setShowUserMenu(false);
                     onOpenNewAppointment();
                   }}
-                  className="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-sky-50 flex items-center gap-2.5"
+                  className="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-sky-50 flex items-center gap-2.5 cursor-pointer"
                 >
                   <Calendar className="w-3.5 h-3.5 text-slate-400" />
                   <span>Nueva Cita en Agenda</span>
@@ -312,10 +321,23 @@ export const Header: React.FC<HeaderProps> = ({
                     setShowUserMenu(false);
                     onNavigateHome();
                   }}
-                  className="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-sky-50 flex items-center gap-2.5"
+                  className="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-sky-50 flex items-center gap-2.5 cursor-pointer"
                 >
                   <Sliders className="w-3.5 h-3.5 text-slate-400" />
                   <span>Panel Principal de Módulos</span>
+                </button>
+
+                <div className="border-t border-slate-100 my-1"></div>
+
+                <button
+                  onClick={() => {
+                    setShowUserMenu(false);
+                    onLogout();
+                  }}
+                  className="w-full text-left px-4 py-2 text-xs text-red-600 hover:bg-red-50 flex items-center gap-2.5 cursor-pointer font-semibold"
+                >
+                  <LogOut className="w-3.5 h-3.5 text-red-500" />
+                  <span>Cerrar Sesión</span>
                 </button>
               </div>
             </div>

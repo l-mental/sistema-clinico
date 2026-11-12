@@ -165,3 +165,15 @@ export interface DiagnosticStudy {
   hallazgos: string;
   imagenReferencial?: string;
 }
+
+export interface AuthUser {
+  id: string;
+  nombre: string;
+  apellidos: string;
+  email: string;
+  rol: 'Oftalmólogo Principal' | 'Oftalmólogo Cirujano' | 'Optometrista' | 'Enfermería & Triaje' | 'Admisión & Facturación';
+  colegiatura?: string; // CMP / RNE
+  avatar: string;
+  sede: string;
+}
+

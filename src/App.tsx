@@ -6,7 +6,8 @@ import {
   SurgeryRecord, 
   InventoryItem, 
   EmergencyCase, 
-  DiagnosticStudy 
+  DiagnosticStudy,
+  AuthUser 
 } from './types/hospital';
 import { 
   INITIAL_PATIENTS, 
@@ -22,6 +23,7 @@ import {
 import { Header } from './components/Header';
 import { Sidebar, ActiveView } from './components/Sidebar';
 import { DashboardGrid } from './components/DashboardGrid';
+import { LoginScreen, PRESET_USERS } from './components/LoginScreen';
 import { ClinicalConsultationModule } from './components/modules/ClinicalConsultationModule';
 import { AppointmentsModule } from './components/modules/AppointmentsModule';
 import { PatientsModule } from './components/modules/PatientsModule';
@@ -81,6 +83,11 @@ export default function App() {
 
   const [diagnostics] = useState<DiagnosticStudy[]>(INITIAL_DIAGNOSTICS);
 
+  // User Authentication State
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => 
+    getStoredData<AuthUser | null>('auth_user', PRESET_USERS[0])
+  );
+
   // Modals State
   const [showNewPatientModal, setShowNewPatientModal] = useState(false);
   const [showNewAppointmentModal, setShowNewAppointmentModal] = useState(false);
@@ -111,6 +118,18 @@ export default function App() {
   useEffect(() => {
     saveStoredData('emergencies', emergencies);
   }, [emergencies]);
+
+  // Auth Handlers
+  const handleLogin = (user: AuthUser) => {
+    setCurrentUser(user);
+    setActiveCenter(user.sede);
+    saveStoredData('auth_user', user);
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    saveStoredData('auth_user', null);
+  };
 
   // Handlers
   const handleAddPatient = (newP: Patient) => {
@@ -162,6 +181,11 @@ export default function App() {
     ));
   };
 
+  // If not logged in, show Hospital Login Screen
+  if (!currentUser) {
+    return <LoginScreen onLogin={handleLogin} />;
+  }
+
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col antialiased">
       {/* Top Header */}
@@ -177,6 +201,8 @@ export default function App() {
         activeCenter={activeCenter}
         setActiveCenter={setActiveCenter}
         onNavigateHome={() => setActiveView('dashboard')}
+        currentUser={currentUser}
+        onLogout={handleLogout}
       />
 
       {/* Mobile Toggle Button */}
