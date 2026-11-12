@@ -1,0 +1,6 @@
+{
+  "name": "OftalmoHospital - Sistema Hospitalario Oftalmológico",
+  "description": "Sistema integral de gestión hospitalaria especializado en oftalmología con módulos de citas, registro de pacientes, historia clínica oftalmológica, agudeza visual, refracción, quirófano, urgencias y farmacia.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
