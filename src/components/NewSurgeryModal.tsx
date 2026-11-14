@@ -6,17 +6,19 @@ interface NewSurgeryModalProps {
   patients: Patient[];
   onAddSurgery: (srg: SurgeryRecord) => void;
   onClose: () => void;
+  lockedDoctorName?: string;
 }
 
 export const NewSurgeryModal: React.FC<NewSurgeryModalProps> = ({
   patients,
   onAddSurgery,
-  onClose
+  onClose,
+  lockedDoctorName
 }) => {
   const [selectedPatientId, setSelectedPatientId] = useState(patients[0]?.id || '');
   const [ojo, setOjo] = useState<EyeSide>('OD');
   const [procedimiento, setProcedimiento] = useState<SurgeryRecord['procedimiento']>('Facoemulsificación + LIO');
-  const [cirujano, setCirujano] = useState('Dr. Gonzalo Huanca');
+  const [cirujano, setCirujano] = useState(lockedDoctorName || 'Dr. Gonzalo Huanca');
   const [anestesiologo, setAnestesiologo] = useState('Dra. M. Arévalo');
   const [quirofano, setQuirofano] = useState('Quirófano Oftalmológico 1');
   const [fechaHora, setFechaHora] = useState('2026-11-13 10:00');
@@ -153,10 +155,15 @@ export const NewSurgeryModal: React.FC<NewSurgeryModalProps> = ({
               <label className="font-bold text-slate-700 block mb-1">Cirujano</label>
               <select
                 value={cirujano}
+                disabled={Boolean(lockedDoctorName)}
                 onChange={(e) => setCirujano(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-xl"
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl disabled:bg-slate-100 disabled:text-slate-700"
               >
+                {lockedDoctorName && !['Dr. Gonzalo Huanca', 'Dra. Sofía Valdés', 'Dr. Roberto Méndez', 'Dra. Carmen Morales'].includes(lockedDoctorName) && (
+                  <option value={lockedDoctorName}>{lockedDoctorName}</option>
+                )}
                 <option value="Dr. Gonzalo Huanca">Dr. Gonzalo Huanca</option>
+                <option value="Dra. Sofía Valdés">Dra. Sofía Valdés</option>
                 <option value="Dr. Roberto Méndez">Dr. Roberto Méndez</option>
                 <option value="Dra. Carmen Morales">Dra. Carmen Morales</option>
               </select>

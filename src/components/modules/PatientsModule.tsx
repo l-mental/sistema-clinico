@@ -22,6 +22,8 @@ interface PatientsModuleProps {
   onOpenNewPatient: () => void;
   onStartConsultation: (p: Patient) => void;
   onBack: () => void;
+  canStartConsultation?: boolean;
+  onOpenOptica?: () => void;
 }
 
 export const PatientsModule: React.FC<PatientsModuleProps> = ({
@@ -30,10 +32,15 @@ export const PatientsModule: React.FC<PatientsModuleProps> = ({
   onSelectPatient,
   onOpenNewPatient,
   onStartConsultation,
-  onBack
+  onBack,
+  canStartConsultation = true,
+  onOpenOptica
 }) => {
   const [search, setSearch] = useState('');
-  const current = selectedPatient || patients[0];
+  const current =
+    (selectedPatient && patients.some(p => p.id === selectedPatient.id) ? selectedPatient : null) ||
+    patients[0] ||
+    null;
 
   const filtered = patients.filter(p => 
     p.nombre.toLowerCase().includes(search.toLowerCase()) ||
@@ -158,13 +165,25 @@ export const PatientsModule: React.FC<PatientsModuleProps> = ({
                   </div>
                 </div>
 
-                <button
-                  onClick={() => onStartConsultation(current)}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-sky-600 hover:bg-sky-700 rounded-xl shadow-xs transition-colors cursor-pointer"
-                >
-                  <Eye className="w-3.5 h-3.5" />
-                  <span>Abrir Consulta</span>
-                </button>
+                {canStartConsultation ? (
+                  <button
+                    onClick={() => onStartConsultation(current)}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-sky-600 hover:bg-sky-700 rounded-xl shadow-xs transition-colors cursor-pointer"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>Abrir Consulta</span>
+                  </button>
+                ) : (
+                  onOpenOptica && (
+                    <button
+                      onClick={onOpenOptica}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 rounded-xl shadow-xs transition-colors cursor-pointer"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>Ir a Óptica / Lentes</span>
+                    </button>
+                  )
+                )}
               </div>
 
               {/* Patient Basic Data Grid */}

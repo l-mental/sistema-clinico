@@ -30,6 +30,7 @@ interface ClinicalConsultationModuleProps {
   onSaveExam: (exam: OphthalmologyExam) => void;
   onOpenPrescription: (exam: OphthalmologyExam) => void;
   onBack: () => void;
+  currentDoctorName?: string;
 }
 
 const COMMON_DIAGNOSES = [
@@ -63,9 +64,13 @@ export const ClinicalConsultationModule: React.FC<ClinicalConsultationModuleProp
   exams,
   onSaveExam,
   onOpenPrescription,
-  onBack
+  onBack,
+  currentDoctorName
 }) => {
-  const currentPatient = selectedPatient || patients[0];
+  const currentPatient =
+    (selectedPatient && patients.some(p => p.id === selectedPatient.id) ? selectedPatient : null) ||
+    patients[0] ||
+    null;
 
   // Clinical Exam Form State
   const [avSinOD, setAvSinOD] = useState('20/40');
@@ -162,7 +167,7 @@ export const ClinicalConsultationModule: React.FC<ClinicalConsultationModuleProp
       pacienteNombre: `${currentPatient.nombre} ${currentPatient.apellidos}`,
       nhc: currentPatient.nhc,
       fecha: new Date().toISOString().split('T')[0],
-      medico: 'Dr. Gonzalo Huanca',
+      medico: currentDoctorName || 'Dr. Gonzalo Huanca',
       avSinCorreccionOD: avSinOD,
       avSinCorreccionOI: avSinOI,
       avConCorreccionOD: avConOD,
@@ -255,7 +260,7 @@ export const ClinicalConsultationModule: React.FC<ClinicalConsultationModuleProp
                   pacienteNombre: `${currentPatient.nombre} ${currentPatient.apellidos}`,
                   nhc: currentPatient.nhc,
                   fecha: new Date().toISOString().split('T')[0],
-                  medico: 'Dr. Gonzalo Huanca',
+                  medico: currentDoctorName || 'Dr. Gonzalo Huanca',
                   avSinCorreccionOD: avSinOD,
                   avSinCorreccionOI: avSinOI,
                   avConCorreccionOD: avConOD,

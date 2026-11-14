@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Patient, 
   Appointment, 
@@ -7,7 +7,11 @@ import {
   InventoryItem, 
   EmergencyCase, 
   DiagnosticStudy,
-  AuthUser 
+  AuthUser,
+  UserRole,
+  OpticalFrame,
+  OpticalSaleOrder,
+  OpticalOrderStatus
 } from './types/hospital';
 import { 
   INITIAL_PATIENTS, 
@@ -17,13 +21,15 @@ import {
   INITIAL_INVENTORY, 
   INITIAL_EMERGENCIES, 
   INITIAL_DIAGNOSTICS,
+  INITIAL_OPTICAL_FRAMES,
+  INITIAL_OPTICAL_ORDERS,
   getStoredData,
   saveStoredData
 } from './data/mockHospitalData';
 import { Header } from './components/Header';
 import { Sidebar, ActiveView } from './components/Sidebar';
 import { DashboardGrid } from './components/DashboardGrid';
-import { LoginScreen, PRESET_USERS } from './components/LoginScreen';
+import { LoginScreen } from './components/LoginScreen';
 import { ClinicalConsultationModule } from './components/modules/ClinicalConsultationModule';
 import { AppointmentsModule } from './components/modules/AppointmentsModule';
 import { PatientsModule } from './components/modules/PatientsModule';
@@ -33,27 +39,59 @@ import { DiagnosticsOCTModule } from './components/modules/DiagnosticsOCTModule'
 import { InventoryModule } from './components/modules/InventoryModule';
 import { ReportsModule } from './components/modules/ReportsModule';
 import { DischargeTemplatesModule } from './components/modules/DischargeTemplatesModule';
+import { OpticaModule } from './components/modules/OpticaModule';
 import { PrescriptionModal } from './components/PrescriptionModal';
 import { NewPatientModal } from './components/NewPatientModal';
 import { NewAppointmentModal } from './components/NewAppointmentModal';
 import { NewSurgeryModal } from './components/NewSurgeryModal';
 import { 
-  Bed, 
-  Syringe, 
-  Droplet, 
-  UserCheck, 
-  Wrench, 
   ArrowLeft,
-  CheckCircle2,
-  AlertCircle,
   Menu
 } from 'lucide-react';
 
+const VALID_ROLES: UserRole[] = ['Administrador', 'Doctor', 'Operador'];
+
+function isValidAuthUser(user: AuthUser | null): user is AuthUser {
+  return Boolean(user && VALID_ROLES.includes(user.rol));
+}
+
+function canAccessView(role: UserRole, view: ActiveView): boolean {
+  if (role === 'Administrador') return true;
+  if (role === 'Operador') {
+    return view === 'optica' || view === 'patients';
+  }
+  const doctorViews: ActiveView[] = [
+    'dashboard',
+    'appointments',
+    'patients',
+    'clinical',
+    'daycare',
+    'emergency',
+    'surgery',
+    'procedures',
+    'laboratory',
+    'imaging',
+    'discharge',
+    'templates'
+  ];
+  return doctorViews.includes(view);
+}
+
 export default function App() {
+  // User Authentication State (validate against current 3-role schema)
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
+    const stored = getStoredData<AuthUser | null>('auth_user', null);
+    return isValidAuthUser(stored) ? stored : null;
+  });
+
   // Navigation State
-  const [activeView, setActiveView] = useState<ActiveView>('dashboard');
+  const [activeView, setActiveView] = useState<ActiveView>(() =>
+    currentUser?.rol === 'Operador' ? 'optica' : 'dashboard'
+  );
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const [activeCenter, setActiveCenter] = useState('Centro Oftalmológico Láser & Visión - Sede Central');
+  const [activeCenter, setActiveCenter] = useState(
+    () => currentUser?.sede || 'Centro Oftalmológico Láser & Visión - Sede Central'
+  );
 
   // Core Clinical State with LocalStorage Persistence
   const [patients, setPatients] = useState<Patient[]>(() => 
@@ -81,12 +119,19 @@ export default function App() {
     getStoredData('emergencies', INITIAL_EMERGENCIES)
   );
 
-  const [diagnostics] = useState<DiagnosticStudy[]>(INITIAL_DIAGNOSTICS);
-
-  // User Authentication State
-  const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => 
-    getStoredData<AuthUser | null>('auth_user', PRESET_USERS[0])
+  const [opticalFrames, setOpticalFrames] = useState<OpticalFrame[]>(() =>
+    getStoredData('optical_frames', INITIAL_OPTICAL_FRAMES)
   );
+
+  const [opticalOrders, setOpticalOrders] = useState<OpticalSaleOrder[]>(() =>
+    getStoredData('optical_orders', INITIAL_OPTICAL_ORDERS)
+  );
+
+  const [doctorPatientLinks, setDoctorPatientLinks] = useState<Record<string, string[]>>(() =>
+    getStoredData('doctor_patient_links', {})
+  );
+
+  const [diagnostics] = useState<DiagnosticStudy[]>(INITIAL_DIAGNOSTICS);
 
   // Modals State
   const [showNewPatientModal, setShowNewPatientModal] = useState(false);
@@ -119,10 +164,65 @@ export default function App() {
     saveStoredData('emergencies', emergencies);
   }, [emergencies]);
 
+  useEffect(() => {
+    saveStoredData('optical_frames', opticalFrames);
+  }, [opticalFrames]);
+
+  useEffect(() => {
+    saveStoredData('optical_orders', opticalOrders);
+  }, [opticalOrders]);
+
+  useEffect(() => {
+    saveStoredData('doctor_patient_links', doctorPatientLinks);
+  }, [doctorPatientLinks]);
+
+  // Role-Scoped Clinical Data Filtering (Doctor sees ONLY their own data)
+  const isDoctor = currentUser?.rol === 'Doctor';
+  const currentDoctorName = isDoctor
+    ? currentUser.doctorName || `${currentUser.nombre} ${currentUser.apellidos}`.trim()
+    : undefined;
+
+  const visibleAppointments = useMemo(() => {
+    if (!isDoctor || !currentDoctorName) return appointments;
+    return appointments.filter(a => a.especialista === currentDoctorName);
+  }, [appointments, isDoctor, currentDoctorName]);
+
+  const visibleSurgeries = useMemo(() => {
+    if (!isDoctor || !currentDoctorName) return surgeries;
+    return surgeries.filter(s => s.cirujano === currentDoctorName);
+  }, [surgeries, isDoctor, currentDoctorName]);
+
+  const visibleExams = useMemo(() => {
+    if (!isDoctor || !currentDoctorName) return exams;
+    return exams.filter(e => e.medico === currentDoctorName);
+  }, [exams, isDoctor, currentDoctorName]);
+
+  const visibleEmergencies = useMemo(() => {
+    if (!isDoctor || !currentDoctorName) return emergencies;
+    return emergencies.filter(em => em.medicoAsignado === currentDoctorName);
+  }, [emergencies, isDoctor, currentDoctorName]);
+
+  const visiblePatients = useMemo(() => {
+    if (!isDoctor || !currentDoctorName) return patients;
+    const allowedIds = new Set<string>(doctorPatientLinks[currentDoctorName] || []);
+    visibleAppointments.forEach(a => allowedIds.add(a.pacienteId));
+    visibleSurgeries.forEach(s => allowedIds.add(s.pacienteId));
+    visibleExams.forEach(e => allowedIds.add(e.pacienteId));
+    return patients.filter(p => allowedIds.has(p.id));
+  }, [patients, isDoctor, currentDoctorName, doctorPatientLinks, visibleAppointments, visibleSurgeries, visibleExams]);
+
+  const effectiveSelectedPatient = useMemo(() => {
+    if (selectedPatient && visiblePatients.some(p => p.id === selectedPatient.id)) {
+      return selectedPatient;
+    }
+    return visiblePatients[0] || null;
+  }, [selectedPatient, visiblePatients]);
+
   // Auth Handlers
   const handleLogin = (user: AuthUser) => {
     setCurrentUser(user);
     setActiveCenter(user.sede);
+    setActiveView(user.rol === 'Operador' ? 'optica' : 'dashboard');
     saveStoredData('auth_user', user);
   };
 
@@ -131,60 +231,109 @@ export default function App() {
     saveStoredData('auth_user', null);
   };
 
-  // Handlers
+  // Clinical Handlers
   const handleAddPatient = (newP: Patient) => {
-    setPatients([newP, ...patients]);
+    setPatients(prev => [newP, ...prev]);
     setSelectedPatient(newP);
+    if (isDoctor && currentDoctorName) {
+      setDoctorPatientLinks(prev => ({
+        ...prev,
+        [currentDoctorName]: [newP.id, ...(prev[currentDoctorName] || [])]
+      }));
+    }
   };
 
   const handleAddAppointment = (newApt: Appointment) => {
-    setAppointments([newApt, ...appointments]);
+    setAppointments(prev => [newApt, ...prev]);
   };
 
   const handleUpdateAppointmentStatus = (aptId: string, newStatus: Appointment['estado']) => {
-    setAppointments(appointments.map(apt => 
+    setAppointments(prev => prev.map(apt => 
       apt.id === aptId ? { ...apt, estado: newStatus } : apt
     ));
   };
 
   const handleSaveExam = (exam: OphthalmologyExam) => {
-    setExams([exam, ...exams]);
-    // update patient last consult
-    setPatients(patients.map(p => 
-      p.id === exam.pacienteId ? { ...p, ultimaConsulta: exam.fecha, diagnosticoPrincipal: exam.diagnosticos[0] } : p
+    setExams(prev => [exam, ...prev]);
+    setPatients(prev => prev.map(p => 
+      p.id === exam.pacienteId
+        ? { ...p, ultimaConsulta: exam.fecha, diagnosticoPrincipal: exam.diagnosticos[0] }
+        : p
     ));
   };
 
   const handleAddSurgery = (srg: SurgeryRecord) => {
-    setSurgeries([srg, ...surgeries]);
+    setSurgeries(prev => [srg, ...prev]);
   };
 
   const handleUpdateSurgeryStatus = (id: string, status: SurgeryRecord['estado']) => {
-    setSurgeries(surgeries.map(s => 
+    setSurgeries(prev => prev.map(s => 
       s.id === id ? { ...s, estado: status } : s
     ));
   };
 
   const handleUpdateInventoryStock = (itemId: string, delta: number) => {
-    setInventory(inventory.map(item => 
+    setInventory(prev => prev.map(item => 
       item.id === itemId ? { ...item, stock: Math.max(0, item.stock + delta) } : item
     ));
   };
 
   const handleAddEmergency = (emg: EmergencyCase) => {
-    setEmergencies([emg, ...emergencies]);
+    setEmergencies(prev => [emg, ...prev]);
   };
 
   const handleUpdateEmergencyStatus = (id: string, status: EmergencyCase['estado']) => {
-    setEmergencies(emergencies.map(e => 
+    setEmergencies(prev => prev.map(e => 
       e.id === id ? { ...e, estado: status } : e
     ));
+  };
+
+  // Óptica Handlers
+  const handleCreateOpticalOrder = (order: OpticalSaleOrder) => {
+    setOpticalOrders(prev => [order, ...prev]);
+    setOpticalFrames(prev =>
+      prev.map(frame =>
+        frame.id === order.monturaId
+          ? { ...frame, stock: Math.max(0, frame.stock - 1) }
+          : frame
+      )
+    );
+  };
+
+  const handleUpdateOpticalOrderStatus = (orderId: string, status: OpticalOrderStatus) => {
+    setOpticalOrders(prev =>
+      prev.map(o => (o.id === orderId ? { ...o, estado: status } : o))
+    );
+  };
+
+  const handleCollectOpticalBalance = (orderId: string) => {
+    setOpticalOrders(prev =>
+      prev.map(o => (o.id === orderId ? { ...o, acuenta: o.total, saldo: 0 } : o))
+    );
+  };
+
+  const handleUpdateFrameStock = (frameId: string, delta: number) => {
+    setOpticalFrames(prev =>
+      prev.map(f => (f.id === frameId ? { ...f, stock: Math.max(0, f.stock + delta) } : f))
+    );
+  };
+
+  const handleAddOpticalFrame = (frame: OpticalFrame) => {
+    setOpticalFrames(prev => [frame, ...prev]);
   };
 
   // If not logged in, show Hospital Login Screen
   if (!currentUser) {
     return <LoginScreen onLogin={handleLogin} />;
   }
+
+  const defaultHomeView: ActiveView = currentUser.rol === 'Operador' ? 'optica' : 'dashboard';
+  const safeActiveView: ActiveView = canAccessView(currentUser.rol, activeView)
+    ? activeView
+    : defaultHomeView;
+
+  const userDisplayName = `${currentUser.nombre} ${currentUser.apellidos}`.trim();
+  const activeOrdersCount = opticalOrders.filter(o => o.estado !== 'Entregado').length;
 
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col antialiased">
@@ -193,14 +342,15 @@ export default function App() {
         onOpenNewPatient={() => setShowNewPatientModal(true)}
         onOpenNewAppointment={() => setShowNewAppointmentModal(true)}
         onOpenConsultation={() => setActiveView('clinical')}
+        onOpenOptica={() => setActiveView('optica')}
         onSelectPatient={(p) => {
           setSelectedPatient(p);
           setActiveView('patients');
         }}
-        patients={patients}
+        patients={visiblePatients}
         activeCenter={activeCenter}
         setActiveCenter={setActiveCenter}
-        onNavigateHome={() => setActiveView('dashboard')}
+        onNavigateHome={() => setActiveView(defaultHomeView)}
         currentUser={currentUser}
         onLogout={handleLogout}
       />
@@ -215,41 +365,69 @@ export default function App() {
           <span>Módulos y Menú Lateral</span>
         </button>
         <span className="text-[11px] text-sky-400 font-mono">
-          {activeView.toUpperCase()}
+          {safeActiveView.toUpperCase()}
         </span>
       </div>
 
       <div className="flex-1 flex">
         {/* Dark Left Sidebar */}
         <Sidebar
-          activeView={activeView}
+          activeView={safeActiveView}
           setActiveView={setActiveView}
           isMobileOpen={isMobileOpen}
           setIsMobileOpen={setIsMobileOpen}
+          userRole={currentUser.rol}
+          counts={{
+            appointments: visibleAppointments.length,
+            surgeries: visibleSurgeries.filter(s => s.estado !== 'Alta').length,
+            emergencies: visibleEmergencies.filter(e => e.estado !== 'Estabilizado / Alta').length,
+            opticaOrders: activeOrdersCount
+          }}
         />
 
         {/* Central Workspace Area */}
         <main className="flex-1 md:ml-16 lg:ml-20 overflow-x-hidden min-h-[calc(100vh-4rem)] pb-12">
           
-          {/* Main 18-Module Dashboard */}
-          {activeView === 'dashboard' && (
+          {/* Main Dashboard (Administrador & Doctor) */}
+          {safeActiveView === 'dashboard' && (
             <DashboardGrid
               onNavigate={(view) => setActiveView(view)}
+              userRole={currentUser.rol}
+              userDisplayName={userDisplayName}
               stats={{
-                appointmentsCount: appointments.length,
-                patientsCount: patients.length,
-                activeSurgeries: surgeries.filter(s => s.estado !== 'Alta').length,
-                emergenciesCount: emergencies.filter(e => e.estado !== 'Estabilizado / Alta').length,
-                inventoryLowCount: inventory.filter(i => i.stock <= i.stockMinimo).length
+                appointmentsCount: visibleAppointments.length,
+                patientsCount: visiblePatients.length,
+                activeSurgeries: visibleSurgeries.filter(s => s.estado !== 'Alta').length,
+                emergenciesCount: visibleEmergencies.filter(e => e.estado !== 'Estabilizado / Alta').length,
+                inventoryLowCount: inventory.filter(i => i.stock <= i.stockMinimo).length,
+                opticaOrdersCount: activeOrdersCount
               }}
             />
           )}
 
-          {/* Module: Citas & Agenda */}
-          {activeView === 'appointments' && (
-            <AppointmentsModule
-              appointments={appointments}
+          {/* Module: Óptica · Venta de Lentes (Operador & Administrador) */}
+          {safeActiveView === 'optica' && (
+            <OpticaModule
+              frames={opticalFrames}
+              orders={opticalOrders}
               patients={patients}
+              exams={exams}
+              sellerName={userDisplayName}
+              canReturnDashboard={currentUser.rol === 'Administrador'}
+              onCreateOrder={handleCreateOpticalOrder}
+              onUpdateOrderStatus={handleUpdateOpticalOrderStatus}
+              onCollectBalance={handleCollectOpticalBalance}
+              onUpdateFrameStock={handleUpdateFrameStock}
+              onAddFrame={handleAddOpticalFrame}
+              onBack={() => setActiveView('dashboard')}
+            />
+          )}
+
+          {/* Module: Citas & Agenda */}
+          {safeActiveView === 'appointments' && (
+            <AppointmentsModule
+              appointments={visibleAppointments}
+              patients={visiblePatients}
               onOpenNewAppointment={() => setShowNewAppointmentModal(true)}
               onSelectPatient={(p) => {
                 setSelectedPatient(p);
@@ -261,38 +439,41 @@ export default function App() {
           )}
 
           {/* Module: Registro de Pacientes */}
-          {activeView === 'patients' && (
+          {safeActiveView === 'patients' && (
             <PatientsModule
-              patients={patients}
-              selectedPatient={selectedPatient}
+              patients={visiblePatients}
+              selectedPatient={effectiveSelectedPatient}
               onSelectPatient={setSelectedPatient}
               onOpenNewPatient={() => setShowNewPatientModal(true)}
               onStartConsultation={(p) => {
                 setSelectedPatient(p);
                 setActiveView('clinical');
               }}
-              onBack={() => setActiveView('dashboard')}
+              canStartConsultation={currentUser.rol !== 'Operador'}
+              onOpenOptica={() => setActiveView('optica')}
+              onBack={() => setActiveView(defaultHomeView)}
             />
           )}
 
-          {/* Module: Consulta Oftalmológica (The Clinical Flagship) */}
-          {activeView === 'clinical' && (
+          {/* Module: Consulta Oftalmológica */}
+          {safeActiveView === 'clinical' && (
             <ClinicalConsultationModule
-              patients={patients}
-              selectedPatient={selectedPatient}
+              patients={visiblePatients}
+              selectedPatient={effectiveSelectedPatient}
               onSelectPatient={setSelectedPatient}
-              exams={exams}
+              exams={visibleExams}
               onSaveExam={handleSaveExam}
               onOpenPrescription={(exam) => setPrescriptionExam(exam)}
               onBack={() => setActiveView('dashboard')}
+              currentDoctorName={currentDoctorName}
             />
           )}
 
           {/* Module: Quirófano Ocular */}
-          {activeView === 'surgery' && (
+          {safeActiveView === 'surgery' && (
             <OperatingTheatreModule
-              surgeries={surgeries}
-              patients={patients}
+              surgeries={visibleSurgeries}
+              patients={visiblePatients}
               onOpenNewSurgery={() => setShowNewSurgeryModal(true)}
               onUpdateSurgeryStatus={handleUpdateSurgeryStatus}
               onBack={() => setActiveView('dashboard')}
@@ -300,26 +481,31 @@ export default function App() {
           )}
 
           {/* Module: Urgencias Oculares */}
-          {activeView === 'emergency' && (
+          {safeActiveView === 'emergency' && (
             <EmergencyModule
-              emergencies={emergencies}
+              emergencies={visibleEmergencies}
               onAddEmergency={handleAddEmergency}
               onUpdateStatus={handleUpdateEmergencyStatus}
               onBack={() => setActiveView('dashboard')}
+              currentDoctorName={currentDoctorName}
             />
           )}
 
           {/* Module: Diagnósticos, OCT & Imágenes */}
-          {(activeView === 'laboratory' || activeView === 'imaging') && (
+          {(safeActiveView === 'laboratory' || safeActiveView === 'imaging') && (
             <DiagnosticsOCTModule
-              diagnostics={diagnostics}
-              patients={patients}
+              diagnostics={
+                isDoctor
+                  ? diagnostics.filter(d => visiblePatients.some(p => p.id === d.pacienteId))
+                  : diagnostics
+              }
+              patients={visiblePatients}
               onBack={() => setActiveView('dashboard')}
             />
           )}
 
-          {/* Module: Inventario & Farmacia */}
-          {(activeView === 'inventory' || activeView === 'inventory-setup') && (
+          {/* Module: Inventario & Farmacia (Administrador) */}
+          {(safeActiveView === 'inventory' || safeActiveView === 'inventory-setup') && (
             <InventoryModule
               inventory={inventory}
               onUpdateStock={handleUpdateInventoryStock}
@@ -327,26 +513,26 @@ export default function App() {
             />
           )}
 
-          {/* Module: MIS Reports */}
-          {activeView === 'reports' && (
+          {/* Module: MIS Reports (Administrador) */}
+          {safeActiveView === 'reports' && (
             <ReportsModule
               onBack={() => setActiveView('dashboard')}
             />
           )}
 
           {/* Module: Epicrisis & Plantillas */}
-          {(activeView === 'discharge' || activeView === 'templates') && (
+          {(safeActiveView === 'discharge' || safeActiveView === 'templates') && (
             <DischargeTemplatesModule
               onBack={() => setActiveView('dashboard')}
             />
           )}
 
           {/* Secondary Specialized Ophthalmology Modules */}
-          {activeView === 'daycare' && (
+          {safeActiveView === 'daycare' && (
             <div className="p-4 md:p-8 max-w-[1520px] mx-auto space-y-6">
               <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-200">
                 <div className="flex items-center gap-3">
-                  <button onClick={() => setActiveView('dashboard')} className="p-2 text-slate-500 hover:text-slate-800">
+                  <button onClick={() => setActiveView('dashboard')} className="p-2 text-slate-500 hover:text-slate-800 cursor-pointer">
                     <ArrowLeft className="w-5 h-5" />
                   </button>
                   <h1 className="text-xl font-bold text-slate-900">Hospitalización de Día & Recuperación</h1>
@@ -379,11 +565,11 @@ export default function App() {
             </div>
           )}
 
-          {activeView === 'procedures' && (
+          {safeActiveView === 'procedures' && (
             <div className="p-4 md:p-8 max-w-[1520px] mx-auto space-y-6">
               <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-200">
                 <div className="flex items-center gap-3">
-                  <button onClick={() => setActiveView('dashboard')} className="p-2 text-slate-500 hover:text-slate-800">
+                  <button onClick={() => setActiveView('dashboard')} className="p-2 text-slate-500 hover:text-slate-800 cursor-pointer">
                     <ArrowLeft className="w-5 h-5" />
                   </button>
                   <h1 className="text-xl font-bold text-slate-900">Procedimientos Menores & Inyecciones Intravítreas</h1>
@@ -413,11 +599,11 @@ export default function App() {
             </div>
           )}
 
-          {activeView === 'corneabank' && (
+          {safeActiveView === 'corneabank' && (
             <div className="p-4 md:p-8 max-w-[1520px] mx-auto space-y-6">
               <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-200">
                 <div className="flex items-center gap-3">
-                  <button onClick={() => setActiveView('dashboard')} className="p-2 text-slate-500 hover:text-slate-800">
+                  <button onClick={() => setActiveView('dashboard')} className="p-2 text-slate-500 hover:text-slate-800 cursor-pointer">
                     <ArrowLeft className="w-5 h-5" />
                   </button>
                   <h1 className="text-xl font-bold text-slate-900">Banco de Córneas & Tejido Ocular</h1>
@@ -445,11 +631,11 @@ export default function App() {
             </div>
           )}
 
-          {activeView === 'insurance' && (
+          {safeActiveView === 'insurance' && (
             <div className="p-4 md:p-8 max-w-[1520px] mx-auto space-y-6">
               <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-200">
                 <div className="flex items-center gap-3">
-                  <button onClick={() => setActiveView('dashboard')} className="p-2 text-slate-500 hover:text-slate-800">
+                  <button onClick={() => setActiveView('dashboard')} className="p-2 text-slate-500 hover:text-slate-800 cursor-pointer">
                     <ArrowLeft className="w-5 h-5" />
                   </button>
                   <h1 className="text-xl font-bold text-slate-900">Seguros Médicos & Cobertura eClaim</h1>
@@ -475,11 +661,11 @@ export default function App() {
             </div>
           )}
 
-          {activeView === 'nursing' && (
+          {safeActiveView === 'nursing' && (
             <div className="p-4 md:p-8 max-w-[1520px] mx-auto space-y-6">
               <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-200">
                 <div className="flex items-center gap-3">
-                  <button onClick={() => setActiveView('dashboard')} className="p-2 text-slate-500 hover:text-slate-800">
+                  <button onClick={() => setActiveView('dashboard')} className="p-2 text-slate-500 hover:text-slate-800 cursor-pointer">
                     <ArrowLeft className="w-5 h-5" />
                   </button>
                   <h1 className="text-xl font-bold text-slate-900">Estación de Enfermería & Triaje Visual</h1>
@@ -497,39 +683,46 @@ export default function App() {
             </div>
           )}
 
-          {activeView === 'management' && (
+          {safeActiveView === 'management' && (
             <div className="p-4 md:p-8 max-w-[1520px] mx-auto space-y-6">
               <div className="flex items-center justify-between bg-white p-4 rounded-2xl border border-slate-200">
                 <div className="flex items-center gap-3">
-                  <button onClick={() => setActiveView('dashboard')} className="p-2 text-slate-500 hover:text-slate-800">
+                  <button onClick={() => setActiveView('dashboard')} className="p-2 text-slate-500 hover:text-slate-800 cursor-pointer">
                     <ArrowLeft className="w-5 h-5" />
                   </button>
                   <h1 className="text-xl font-bold text-slate-900">Gestión Médica y Configuración del Sistema</h1>
                 </div>
               </div>
               <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs space-y-4 text-xs">
-                <h3 className="font-bold text-slate-900 text-sm">Staff Médico Oftalmológico Habilitado</h3>
+                <h3 className="font-bold text-slate-900 text-sm">Staff Médico y Roles de Acceso Habilitados</h3>
                 <div className="divide-y divide-slate-100">
                   <div className="py-2.5 flex items-center justify-between">
                     <div>
-                      <span className="font-bold text-slate-900">Dr. Gonzalo Huanca Luna</span>
-                      <span className="text-slate-500 block text-[11px]">Director Médico · Catarata & Cirugía de Segmento Anterior</span>
+                      <span className="font-bold text-slate-900">Carlos Mendoza (Administrador)</span>
+                      <span className="text-slate-500 block text-[11px]">Director Administrativo · Control global de clínica, reportes y óptica</span>
+                    </div>
+                    <span className="font-mono text-xs text-indigo-700 font-bold">Rol: Administrador</span>
+                  </div>
+                  <div className="py-2.5 flex items-center justify-between">
+                    <div>
+                      <span className="font-bold text-slate-900">Dr. Gonzalo Huanca</span>
+                      <span className="text-slate-500 block text-[11px]">Catarata & Cirugía de Segmento Anterior (Solo su agenda y pacientes)</span>
                     </div>
                     <span className="font-mono text-xs text-sky-700 font-bold">CMP: 49812 · RNE: 24190</span>
                   </div>
                   <div className="py-2.5 flex items-center justify-between">
                     <div>
-                      <span className="font-bold text-slate-900">Dr. Roberto Méndez</span>
-                      <span className="text-slate-500 block text-[11px]">Cirugía Refractiva Láser (Femto-LASIK & PRK)</span>
+                      <span className="font-bold text-slate-900">Dra. Sofía Valdés</span>
+                      <span className="text-slate-500 block text-[11px]">Refracción, Optometría y Córnea (Solo su agenda y pacientes)</span>
                     </div>
-                    <span className="font-mono text-xs text-sky-700 font-bold">CMP: 38201 · RNE: 19802</span>
+                    <span className="font-mono text-xs text-sky-700 font-bold">CMP: 51204 · RNE: 28410</span>
                   </div>
                   <div className="py-2.5 flex items-center justify-between">
                     <div>
-                      <span className="font-bold text-slate-900">Dra. Carmen Morales</span>
-                      <span className="text-slate-500 block text-[11px]">Especialista en Retina Quirúrgica & Vítreo</span>
+                      <span className="font-bold text-slate-900">Andrea Paredes (Operador)</span>
+                      <span className="text-slate-500 block text-[11px]">Óptica Hospitalaria · Venta de lentes, monturas, taller y caja</span>
                     </div>
-                    <span className="font-mono text-xs text-sky-700 font-bold">CMP: 52190 · RNE: 27411</span>
+                    <span className="font-mono text-xs text-teal-700 font-bold">Rol: Operador</span>
                   </div>
                 </div>
               </div>
@@ -555,17 +748,19 @@ export default function App() {
 
       {showNewAppointmentModal && (
         <NewAppointmentModal
-          patients={patients}
+          patients={visiblePatients}
           onAddAppointment={handleAddAppointment}
           onClose={() => setShowNewAppointmentModal(false)}
+          lockedDoctorName={currentDoctorName}
         />
       )}
 
       {showNewSurgeryModal && (
         <NewSurgeryModal
-          patients={patients}
+          patients={visiblePatients}
           onAddSurgery={handleAddSurgery}
           onClose={() => setShowNewSurgeryModal(false)}
+          lockedDoctorName={currentDoctorName}
         />
       )}
     </div>

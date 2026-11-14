@@ -6,18 +6,20 @@ interface NewAppointmentModalProps {
   patients: Patient[];
   onAddAppointment: (apt: Appointment) => void;
   onClose: () => void;
+  lockedDoctorName?: string;
 }
 
 export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
   patients,
   onAddAppointment,
-  onClose
+  onClose,
+  lockedDoctorName
 }) => {
   const [selectedPatientId, setSelectedPatientId] = useState(patients[0]?.id || '');
   const [fecha, setFecha] = useState('2026-11-12');
   const [hora, setHora] = useState('12:00');
   const [tipo, setTipo] = useState<Appointment['tipo']>('Primera Consulta');
-  const [especialista, setEspecialista] = useState('Dr. Gonzalo Huanca');
+  const [especialista, setEspecialista] = useState(lockedDoctorName || 'Dr. Gonzalo Huanca');
   const [consultorio, setConsultorio] = useState('Consultorio 1 - Lámpara de Hendidura');
   const [motivo, setMotivo] = useState('Evaluación oftalmológica general');
 
@@ -120,9 +122,13 @@ export const NewAppointmentModal: React.FC<NewAppointmentModalProps> = ({
               <label className="font-bold text-slate-700 block mb-1">Médico Especialista</label>
               <select
                 value={especialista}
+                disabled={Boolean(lockedDoctorName)}
                 onChange={(e) => setEspecialista(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-xl font-medium"
+                className="w-full px-3 py-2 border border-slate-300 rounded-xl font-medium disabled:bg-slate-100 disabled:text-slate-700"
               >
+                {lockedDoctorName && !['Dr. Gonzalo Huanca', 'Dra. Sofía Valdés', 'Dr. Roberto Méndez', 'Dra. Carmen Morales'].includes(lockedDoctorName) && (
+                  <option value={lockedDoctorName}>{lockedDoctorName}</option>
+                )}
                 <option value="Dr. Gonzalo Huanca">Dr. Gonzalo Huanca</option>
                 <option value="Dra. Sofía Valdés">Dra. Sofía Valdés</option>
                 <option value="Dr. Roberto Méndez">Dr. Roberto Méndez</option>

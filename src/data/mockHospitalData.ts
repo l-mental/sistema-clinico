@@ -5,7 +5,9 @@ import {
   SurgeryRecord, 
   InventoryItem, 
   EmergencyCase, 
-  DiagnosticStudy 
+  DiagnosticStudy,
+  OpticalFrame,
+  OpticalSaleOrder
 } from '../types/hospital';
 
 export const INITIAL_PATIENTS: Patient[] = [
@@ -237,6 +239,69 @@ export const INITIAL_EXAMS: OphthalmologyExam[] = [
         frecuencia: 'Cada 6 horas',
         duracion: 'Postoperatorio',
         ojo: 'OD'
+      }
+    ]
+  },
+  {
+    id: 'ex-002',
+    pacienteId: 'p-002',
+    pacienteNombre: 'Carlos Santillana Ríos',
+    nhc: 'OFT-10493',
+    fecha: '2026-11-12',
+    medico: 'Dra. Sofía Valdés',
+    avSinCorreccionOD: '20/100',
+    avSinCorreccionOI: '20/80',
+    avConCorreccionOD: '20/20',
+    avConCorreccionOI: '20/20',
+    avEstenopeicoOD: '20/20',
+    avEstenopeicoOI: '20/20',
+    refraccionOD: {
+      esfera: '-2.25',
+      cilindro: '-1.00',
+      eje: '180',
+      adicion: '',
+      agudezaVisual: '20/20'
+    },
+    refraccionOI: {
+      esfera: '-1.75',
+      cilindro: '-0.75',
+      eje: '175',
+      adicion: '',
+      agudezaVisual: '20/20'
+    },
+    distanciaInterpupilar: 64,
+    pioOD: 14,
+    pioOI: 14,
+    metodoTonometria: 'Neumotonometría (Aire)',
+    lamparaHendidura: {
+      corneaOD: 'Transparente, sin tinciones',
+      corneaOI: 'Transparente',
+      camaraAnteriorOD: 'Profunda, sin células',
+      camaraAnteriorOI: 'Profunda',
+      cristalinoOD: 'Transparente',
+      cristalinoOI: 'Transparente',
+      irisOD: 'Normorreactivo',
+      irisOI: 'Normorreactivo'
+    },
+    fondoDeOjo: {
+      papilaOD: 'Rosada, bordes netos, E/P 0.2',
+      papilaOI: 'Rosada, bordes netos, E/P 0.2',
+      maculaOD: 'Normal, brillo foveolar presente',
+      maculaOI: 'Normal',
+      retinaPerifericaOD: 'Aplicada sin lesiones',
+      retinaPerifericaOI: 'Aplicada'
+    },
+    diagnosticos: ['Astigmatismo miópico compuesto bilateral', 'Astenopía por uso de pantallas'],
+    cie10: ['H52.2', 'H53.1'],
+    planTratamiento: 'Prescripción de gafas monofocales con filtro de luz azul y antirreflejante.',
+    recetaLentes: true,
+    medicamentosPrescritos: [
+      {
+        nombre: 'Hialuronato de Sodio 0.4% sin conservantes',
+        dosis: '1 gota',
+        frecuencia: 'Cada 6 horas',
+        duracion: '30 días',
+        ojo: 'Ambos'
       }
     ]
   }
@@ -478,6 +543,196 @@ export const INITIAL_DIAGNOSTICS: DiagnosticStudy[] = [
     tecnicoOftalmico: 'Tec. Marcos Silva',
     estado: 'Informado por Oftalmólogo',
     hallazgos: 'Astigmatismo regular con la regla en OD y OI. Elevación anterior y posterior dentro de rangos normales. Paquimetría en punto más delgado: OD 548 μm, OI 552 μm. Apto para ablación Femto-LASIK.'
+  }
+];
+
+export const INITIAL_OPTICAL_FRAMES: OpticalFrame[] = [
+  {
+    id: 'frm-001',
+    codigo: 'MON-RB-5154',
+    marca: 'Ray-Ban',
+    modelo: 'Clubmaster Optics RB5154',
+    categoria: 'Acetato Premium',
+    color: 'Negro / Dorado',
+    medidas: '51-21-145',
+    precio: 145.00,
+    stock: 9,
+    stockMinimo: 3
+  },
+  {
+    id: 'frm-002',
+    codigo: 'MON-OAK-8156',
+    marca: 'Oakley',
+    modelo: 'Holbrook RX OX8156',
+    categoria: 'Oftálmico Clásico',
+    color: 'Gris Humo Mate',
+    medidas: '54-18-137',
+    precio: 130.00,
+    stock: 12,
+    stockMinimo: 4
+  },
+  {
+    id: 'frm-003',
+    codigo: 'MON-SIL-5515',
+    marca: 'Silhouette',
+    modelo: 'Titan Minimal Art 5515',
+    categoria: 'Titanio / Ultraligero',
+    color: 'Plata Satinado (Al Aire)',
+    medidas: '52-17-140',
+    precio: 240.00,
+    stock: 4,
+    stockMinimo: 2
+  },
+  {
+    id: 'frm-004',
+    codigo: 'MON-VOG-5326',
+    marca: 'Vogue Eyewear',
+    modelo: 'Cat-Eye VO5326',
+    categoria: 'Acetato Premium',
+    color: 'Carey Habana',
+    medidas: '52-16-140',
+    precio: 95.00,
+    stock: 14,
+    stockMinimo: 4
+  },
+  {
+    id: 'frm-005',
+    codigo: 'MON-CAR-8854',
+    marca: 'Carrera',
+    modelo: 'Sport Titanium 8854',
+    categoria: 'Titanio / Ultraligero',
+    color: 'Azul Marino Mate',
+    medidas: '55-17-145',
+    precio: 125.00,
+    stock: 7,
+    stockMinimo: 3
+  },
+  {
+    id: 'frm-006',
+    codigo: 'MON-MIR-102',
+    marca: 'Miraflex',
+    modelo: 'Flexible New Baby 2',
+    categoria: 'Pediátrico',
+    color: 'Azul Cielo Silicona',
+    medidas: '43-15-120',
+    precio: 68.00,
+    stock: 11,
+    stockMinimo: 4
+  },
+  {
+    id: 'frm-007',
+    codigo: 'MON-POL-410',
+    marca: 'Polaroid',
+    modelo: 'Clip-On Solar PLD 6112',
+    categoria: 'Solar Graduable',
+    color: 'Negro Mate + Clip Polarizado',
+    medidas: '53-18-142',
+    precio: 89.00,
+    stock: 2,
+    stockMinimo: 3
+  },
+  {
+    id: 'frm-008',
+    codigo: 'MON-ECO-204',
+    marca: 'VisionLine',
+    modelo: 'Clásico Flex TR90',
+    categoria: 'Oftálmico Clásico',
+    color: 'Negro Brillo',
+    medidas: '52-17-140',
+    precio: 45.00,
+    stock: 20,
+    stockMinimo: 5
+  }
+];
+
+export const INITIAL_OPTICAL_ORDERS: OpticalSaleOrder[] = [
+  {
+    id: 'opt-001',
+    numeroOrden: 'OPT-2026-0418',
+    fecha: '2026-11-12',
+    hora: '09:50',
+    vendedor: 'Andrea Paredes (Óptica)',
+    pacienteId: 'p-002',
+    clienteNombre: 'Carlos Santillana Ríos',
+    clienteDni: '78239011',
+    clienteTelefono: '+34 689 443 219',
+    medicoPrescriptor: 'Dra. Sofía Valdés',
+    graduacionOD: { esfera: '-2.25', cilindro: '-1.00', eje: '180' },
+    graduacionOI: { esfera: '-1.75', cilindro: '-0.75', eje: '175' },
+    dip: 64,
+    monturaId: 'frm-002',
+    monturaNombre: 'Oakley Holbrook RX OX8156 (Gris Humo Mate)',
+    monturaPrecio: 130.00,
+    tipoLuna: 'Monofocal',
+    materialLuna: 'Policarbonato Irrompible',
+    tratamientos: ['Antirreflejante AR', 'Filtro Luz Azul'],
+    precioLunas: 95.00,
+    descuento: 15.00,
+    total: 210.00,
+    acuenta: 110.00,
+    saldo: 100.00,
+    metodoPago: 'Tarjeta Crédito/Débito',
+    estado: 'En Biselado / Montaje',
+    fechaEntregaEstimada: '2026-11-14',
+    notas: 'Paciente trabaja 8h frente a computador.'
+  },
+  {
+    id: 'opt-002',
+    numeroOrden: 'OPT-2026-0417',
+    fecha: '2026-11-10',
+    hora: '16:20',
+    vendedor: 'Andrea Paredes (Óptica)',
+    pacienteId: 'p-001',
+    clienteNombre: 'Elena Vargas Mendoza',
+    clienteDni: '45892314',
+    clienteTelefono: '+34 612 345 678',
+    medicoPrescriptor: 'Dr. Gonzalo Huanca',
+    graduacionOD: { esfera: '+2.50', cilindro: '-0.75', eje: '85', adicion: '+2.50' },
+    graduacionOI: { esfera: '+1.50', cilindro: '-0.50', eje: '90', adicion: '+2.50' },
+    dip: 62,
+    monturaId: 'frm-004',
+    monturaNombre: 'Vogue Eyewear Cat-Eye VO5326 (Carey Habana)',
+    monturaPrecio: 95.00,
+    tipoLuna: 'Progresivo Digital HD',
+    materialLuna: 'Alto Índice 1.67',
+    tratamientos: ['Antirreflejante AR', 'Fotocromático Transitions'],
+    precioLunas: 260.00,
+    descuento: 0,
+    total: 355.00,
+    acuenta: 200.00,
+    saldo: 155.00,
+    metodoPago: 'Efectivo',
+    estado: 'Listo para Entrega',
+    fechaEntregaEstimada: '2026-11-12',
+    notas: 'Avisar por WhatsApp al familiar para retiro.'
+  },
+  {
+    id: 'opt-003',
+    numeroOrden: 'OPT-2026-0415',
+    fecha: '2026-11-09',
+    hora: '11:10',
+    vendedor: 'Andrea Paredes (Óptica)',
+    clienteNombre: 'Lucía Navarro Torres',
+    clienteDni: '41092831',
+    clienteTelefono: '+34 622 918 401',
+    medicoPrescriptor: 'Receta Externa',
+    graduacionOD: { esfera: '-0.75', cilindro: '-0.50', eje: '90' },
+    graduacionOI: { esfera: '-1.00', cilindro: '-0.25', eje: '85' },
+    dip: 60,
+    monturaId: 'frm-001',
+    monturaNombre: 'Ray-Ban Clubmaster Optics RB5154',
+    monturaPrecio: 145.00,
+    tipoLuna: 'Monofocal',
+    materialLuna: 'CR-39 Orgánico',
+    tratamientos: ['Antirreflejante AR'],
+    precioLunas: 55.00,
+    descuento: 0,
+    total: 200.00,
+    acuenta: 200.00,
+    saldo: 0,
+    metodoPago: 'Transferencia / Yape / Plin',
+    estado: 'Entregado',
+    fechaEntregaEstimada: '2026-11-11'
   }
 ];
 

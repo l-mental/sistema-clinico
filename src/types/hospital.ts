@@ -166,14 +166,81 @@ export interface DiagnosticStudy {
   imagenReferencial?: string;
 }
 
+export type UserRole = 'Administrador' | 'Doctor' | 'Operador';
+
 export interface AuthUser {
   id: string;
   nombre: string;
   apellidos: string;
   email: string;
-  rol: 'Oftalmólogo Principal' | 'Oftalmólogo Cirujano' | 'Optometrista' | 'Enfermería & Triaje' | 'Admisión & Facturación';
+  rol: UserRole;
+  tituloCargo: string;
+  doctorName?: string; // Match key for filtering doctor-specific appointments/surgeries/exams
   colegiatura?: string; // CMP / RNE
   avatar: string;
   sede: string;
 }
+
+export interface OpticalFrame {
+  id: string;
+  codigo: string;
+  marca: string;
+  modelo: string;
+  categoria: 'Oftálmico Clásico' | 'Titanio / Ultraligero' | 'Acetato Premium' | 'Pediátrico' | 'Solar Graduable';
+  color: string;
+  medidas: string; // Ej: 52-18-140
+  precio: number;
+  stock: number;
+  stockMinimo: number;
+}
+
+export type OpticalOrderStatus =
+  | 'En Laboratorio'
+  | 'En Biselado / Montaje'
+  | 'Listo para Entrega'
+  | 'Entregado';
+
+export interface OpticalSaleOrder {
+  id: string;
+  numeroOrden: string;
+  fecha: string;
+  hora: string;
+  vendedor: string;
+  pacienteId?: string;
+  clienteNombre: string;
+  clienteDni: string;
+  clienteTelefono: string;
+  medicoPrescriptor?: string;
+  // Graduación aplicada
+  graduacionOD: {
+    esfera: string;
+    cilindro: string;
+    eje: string;
+    adicion?: string;
+  };
+  graduacionOI: {
+    esfera: string;
+    cilindro: string;
+    eje: string;
+    adicion?: string;
+  };
+  dip: number;
+  // Producto seleccionado
+  monturaId: string;
+  monturaNombre: string;
+  monturaPrecio: number;
+  tipoLuna: 'Monofocal' | 'Bifocal Invisible / Flap-Top' | 'Progresivo Digital HD';
+  materialLuna: 'CR-39 Orgánico' | 'Policarbonato Irrompible' | 'Alto Índice 1.67' | 'Ultra Delgado 1.74';
+  tratamientos: string[]; // Ej: ['Antirreflejante AR', 'Filtro Luz Azul', 'Fotocromático']
+  precioLunas: number;
+  descuento: number;
+  total: number;
+  acuenta: number; // Abono inicial
+  saldo: number; // Por pagar al recoger
+  metodoPago: 'Efectivo' | 'Tarjeta Crédito/Débito' | 'Transferencia / Yape / Plin';
+  estado: OpticalOrderStatus;
+  fechaEntregaEstimada: string;
+  notas?: string;
+}
+
 

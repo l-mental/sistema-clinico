@@ -18,13 +18,15 @@ interface EmergencyModuleProps {
   onAddEmergency: (c: EmergencyCase) => void;
   onUpdateStatus: (id: string, status: EmergencyCase['estado']) => void;
   onBack: () => void;
+  currentDoctorName?: string;
 }
 
 export const EmergencyModule: React.FC<EmergencyModuleProps> = ({
   emergencies,
   onAddEmergency,
   onUpdateStatus,
-  onBack
+  onBack,
+  currentDoctorName
 }) => {
   const [showNewModal, setShowNewModal] = useState(false);
   const [pacienteNombre, setPacienteNombre] = useState('');
@@ -47,7 +49,7 @@ export const EmergencyModule: React.FC<EmergencyModuleProps> = ({
       ojoAfectado: ojo,
       horaIngreso: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       estado: 'En Espera',
-      medicoAsignado: 'Dr. Gonzalo Huanca',
+      medicoAsignado: currentDoctorName || 'Dr. Gonzalo Huanca',
       detalles: detalles || 'Pendiente de biomicroscopía y lavado.'
     };
 

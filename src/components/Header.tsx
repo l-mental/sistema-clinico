@@ -13,7 +13,8 @@ import {
   LogOut,
   Sliders,
   ShieldCheck,
-  CheckCircle2
+  CheckCircle2,
+  Glasses
 } from 'lucide-react';
 import { Patient, AuthUser } from '../types/hospital';
 
@@ -26,6 +27,7 @@ interface HeaderProps {
   activeCenter: string;
   setActiveCenter: (center: string) => void;
   onNavigateHome: () => void;
+  onOpenOptica: () => void;
   currentUser: AuthUser | null;
   onLogout: () => void;
 }
@@ -39,6 +41,7 @@ export const Header: React.FC<HeaderProps> = ({
   activeCenter,
   setActiveCenter,
   onNavigateHome,
+  onOpenOptica,
   currentUser,
   onLogout
 }) => {
@@ -199,25 +202,40 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Right: Quick Actions & Profile */}
       <div className="flex items-center gap-2 sm:gap-3">
-        {/* Quick Consultation CTA */}
-        <button
-          onClick={onOpenConsultation}
-          className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-lg shadow-xs shadow-sky-600/30 transition-all cursor-pointer whitespace-nowrap active:scale-95"
-          title="Nueva Consulta Oftalmológica Completa"
-        >
-          <Eye className="w-3.5 h-3.5" />
-          <span>Consulta Oftalmológica</span>
-        </button>
+        {currentUser?.rol !== 'Operador' && (
+          <>
+            {/* Quick Consultation CTA */}
+            <button
+              onClick={onOpenConsultation}
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 rounded-lg shadow-xs shadow-sky-600/30 transition-all cursor-pointer whitespace-nowrap active:scale-95"
+              title="Nueva Consulta Oftalmológica Completa"
+            >
+              <Eye className="w-3.5 h-3.5" />
+              <span>Consulta Oftalmológica</span>
+            </button>
 
-        {/* New Appointment Quick Button */}
-        <button
-          onClick={onOpenNewAppointment}
-          className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg shadow-xs transition-colors cursor-pointer whitespace-nowrap"
-          title="Agendar Nueva Cita"
-        >
-          <Calendar className="w-3.5 h-3.5 text-sky-600" />
-          <span>Agendar Cita</span>
-        </button>
+            {/* New Appointment Quick Button */}
+            <button
+              onClick={onOpenNewAppointment}
+              className="hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg shadow-xs transition-colors cursor-pointer whitespace-nowrap"
+              title="Agendar Nueva Cita"
+            >
+              <Calendar className="w-3.5 h-3.5 text-sky-600" />
+              <span>Agendar Cita</span>
+            </button>
+          </>
+        )}
+
+        {(currentUser?.rol === 'Operador' || currentUser?.rol === 'Administrador') && (
+          <button
+            onClick={onOpenOptica}
+            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 rounded-lg shadow-xs shadow-teal-600/30 transition-all cursor-pointer whitespace-nowrap active:scale-95"
+            title="Ir a Óptica y Venta de Lentes"
+          >
+            <Glasses className="w-3.5 h-3.5" />
+            <span>Óptica · Venta de Lentes</span>
+          </button>
+        )}
 
         {/* Notifications Icon with Urgent Badge */}
         <div className="relative">
@@ -268,16 +286,18 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={() => setShowUserMenu(!showUserMenu)}
             className="flex items-center gap-2.5 p-1 pl-1.5 sm:pr-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200/80 rounded-xl transition-colors cursor-pointer"
           >
-            <div className="w-7 h-7 rounded-lg bg-sky-700 text-white flex items-center justify-center font-bold text-xs shadow-xs">
+            <div className={`w-7 h-7 rounded-lg text-white flex items-center justify-center font-bold text-xs shadow-xs ${
+              currentUser?.rol === 'Operador' ? 'bg-teal-600' : currentUser?.rol === 'Administrador' ? 'bg-indigo-700' : 'bg-sky-700'
+            }`}>
               {currentUser?.avatar || 'GH'}
             </div>
             <div className="hidden sm:block text-left">
               <div className="text-xs font-bold text-slate-800 flex items-center gap-1">
-                <span>{currentUser ? `${currentUser.nombre} ${currentUser.apellidos}` : 'Dr. Gonzalo Huanca'}</span>
+                <span>{currentUser ? `${currentUser.nombre} ${currentUser.apellidos}` : 'Usuario'}</span>
                 <ShieldCheck className="w-3.5 h-3.5 text-sky-600 inline" />
               </div>
               <div className="text-[10px] text-slate-500 font-medium">
-                {currentUser?.rol || 'Oftalmólogo · Admin'}
+                {currentUser?.rol} · {currentUser?.tituloCargo}
               </div>
             </div>
             <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
@@ -287,11 +307,11 @@ export const Header: React.FC<HeaderProps> = ({
             <div className="absolute right-0 mt-2 w-64 bg-white border border-slate-200 rounded-xl shadow-2xl py-1.5 z-50">
               <div className="px-4 py-2.5 border-b border-slate-100">
                 <p className="text-xs font-bold text-slate-800">
-                  {currentUser ? `${currentUser.nombre} ${currentUser.apellidos}` : 'Dr. Gonzalo Huanca Luna'}
+                  {currentUser ? `${currentUser.nombre} ${currentUser.apellidos}` : 'Usuario'}
                 </p>
-                <p className="text-[11px] text-slate-500">{currentUser?.rol || 'Médico Cirujano Oftalmólogo'}</p>
+                <p className="text-[11px] text-sky-700 font-semibold">{currentUser?.rol} · {currentUser?.tituloCargo}</p>
                 {currentUser?.colegiatura && (
-                  <p className="text-[10px] font-mono text-sky-600 mt-0.5">Colegiado {currentUser.colegiatura}</p>
+                  <p className="text-[10px] font-mono text-slate-500 mt-0.5">{currentUser.colegiatura}</p>
                 )}
                 <p className="text-[10px] text-slate-400 truncate mt-0.5">{currentUser?.email}</p>
               </div>
@@ -306,26 +326,30 @@ export const Header: React.FC<HeaderProps> = ({
                   <UserPlus className="w-3.5 h-3.5 text-slate-400" />
                   <span>Registrar Nuevo Paciente</span>
                 </button>
-                <button
-                  onClick={() => {
-                    setShowUserMenu(false);
-                    onOpenNewAppointment();
-                  }}
-                  className="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-sky-50 flex items-center gap-2.5 cursor-pointer"
-                >
-                  <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Nueva Cita en Agenda</span>
-                </button>
-                <button
-                  onClick={() => {
-                    setShowUserMenu(false);
-                    onNavigateHome();
-                  }}
-                  className="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-sky-50 flex items-center gap-2.5 cursor-pointer"
-                >
-                  <Sliders className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Panel Principal de Módulos</span>
-                </button>
+                {currentUser?.rol !== 'Operador' && (
+                  <>
+                    <button
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        onOpenNewAppointment();
+                      }}
+                      className="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-sky-50 flex items-center gap-2.5 cursor-pointer"
+                    >
+                      <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                      <span>Nueva Cita en Agenda</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowUserMenu(false);
+                        onNavigateHome();
+                      }}
+                      className="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-sky-50 flex items-center gap-2.5 cursor-pointer"
+                    >
+                      <Sliders className="w-3.5 h-3.5 text-slate-400" />
+                      <span>Panel Principal de Módulos</span>
+                    </button>
+                  </>
+                )}
 
                 <div className="border-t border-slate-100 my-1"></div>
 
@@ -337,7 +361,7 @@ export const Header: React.FC<HeaderProps> = ({
                   className="w-full text-left px-4 py-2 text-xs text-red-600 hover:bg-red-50 flex items-center gap-2.5 cursor-pointer font-semibold"
                 >
                   <LogOut className="w-3.5 h-3.5 text-red-500" />
-                  <span>Cerrar Sesión</span>
+                  <span>Cerrar Sesión (Cambiar Rol)</span>
                 </button>
               </div>
             </div>

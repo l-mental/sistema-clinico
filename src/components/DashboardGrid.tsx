@@ -1,52 +1,87 @@
 import React from 'react';
 import { ActiveView } from './Sidebar';
-import { 
-  Calendar, 
-  ClipboardList, 
-  Eye, 
-  Bed, 
-  Siren, 
-  Scissors, 
-  ShieldCheck, 
-  Syringe, 
-  FlaskConical, 
-  Droplet, 
-  Scan, 
-  Boxes, 
-  BarChart3, 
-  UserCheck, 
-  Settings2, 
-  FileCheck2, 
-  ScrollText, 
+import { UserRole } from '../types/hospital';
+import {
+  Eye,
+  Bed,
+  Siren,
+  Scissors,
+  ShieldCheck,
+  Syringe,
+  FlaskConical,
+  Droplet,
+  Scan,
+  Boxes,
+  BarChart3,
+  UserCheck,
+  Settings2,
+  FileCheck2,
+  ScrollText,
   Wrench,
   ArrowRight,
-  TrendingUp,
-  Sparkles
+  Glasses
 } from 'lucide-react';
 
 interface DashboardGridProps {
   onNavigate: (view: ActiveView) => void;
+  userRole: UserRole;
+  userDisplayName: string;
   stats: {
     appointmentsCount: number;
     patientsCount: number;
     activeSurgeries: number;
     emergenciesCount: number;
     inventoryLowCount: number;
+    opticaOrdersCount: number;
   };
 }
 
-export const DashboardGrid: React.FC<DashboardGridProps> = ({ onNavigate, stats }) => {
-  // 18 Modules exactly corresponding to the user's reference image, tailored for Ophthalmology
-  const modules = [
+export const DashboardGrid: React.FC<DashboardGridProps> = ({
+  onNavigate,
+  userRole,
+  userDisplayName,
+  stats
+}) => {
+  const modules: {
+    id: ActiveView;
+    title: string;
+    subtitle: string;
+    desc: string;
+    badge: string;
+    badgeColor: string;
+    iconBg: string;
+    iconBorder: string;
+    roles: UserRole[];
+    icon: React.ReactNode;
+  }[] = [
+    {
+      id: 'optica' as ActiveView,
+      title: 'Óptica · Venta de Lentes',
+      subtitle: 'Optical Store & POS',
+      desc: 'Monturas, lunas progresivas, taller óptico y caja',
+      badge: `${stats.opticaOrdersCount} Órdenes`,
+      badgeColor: 'bg-teal-100 text-teal-800',
+      iconBg: 'from-teal-50 to-emerald-100/60',
+      iconBorder: 'border-teal-200',
+      roles: ['Administrador', 'Operador'],
+      icon: (
+        <div className="relative w-16 h-16 flex items-center justify-center">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-teal-600 to-sky-500 flex items-center justify-center shadow-md shadow-teal-600/25 text-white">
+            <Glasses className="w-7 h-7" />
+          </div>
+        </div>
+      )
+    },
     {
       id: 'appointments' as ActiveView,
-      title: 'Citas y Agenda',
+      title: userRole === 'Doctor' ? 'Mis Citas y Agenda' : 'Citas y Agenda',
       subtitle: 'Appointment',
-      desc: 'Gestión de agenda médica, consultas y turnos',
+      desc: userRole === 'Doctor' ? 'Su agenda médica personal, consultas y turnos' : 'Gestión de agenda médica, consultas y turnos',
       badge: `${stats.appointmentsCount} Hoy`,
       badgeColor: 'bg-sky-100 text-sky-800',
       iconBg: 'from-sky-50 to-blue-100/60',
       iconBorder: 'border-sky-200',
+      roles: ['Administrador', 'Doctor'],
       icon: (
         <div className="relative w-16 h-16 flex items-center justify-center">
           {/* Calendar illustration like image */}
@@ -65,13 +100,14 @@ export const DashboardGrid: React.FC<DashboardGridProps> = ({ onNavigate, stats 
     },
     {
       id: 'patients' as ActiveView,
-      title: 'Registro de Pacientes',
+      title: userRole === 'Doctor' ? 'Mis Pacientes' : 'Registro de Pacientes',
       subtitle: 'Patient Registration',
-      desc: 'Filiación, antecedentes oculares y seguro',
-      badge: `${stats.patientsCount} Registrados`,
+      desc: userRole === 'Doctor' ? 'Expedientes y antecedentes de sus pacientes' : 'Filiación, antecedentes oculares y seguro',
+      badge: `${stats.patientsCount} ${userRole === 'Doctor' ? 'Asignados' : 'Registrados'}`,
       badgeColor: 'bg-emerald-100 text-emerald-800',
       iconBg: 'from-emerald-50 to-teal-100/60',
       iconBorder: 'border-emerald-200',
+      roles: ['Administrador', 'Doctor', 'Operador'],
       icon: (
         <div className="relative w-16 h-16 flex items-center justify-center">
           <div className="w-13 h-14 bg-amber-50 rounded-lg shadow-md border border-amber-200 flex flex-col p-1.5 relative">
@@ -103,6 +139,7 @@ export const DashboardGrid: React.FC<DashboardGridProps> = ({ onNavigate, stats 
       badgeColor: 'bg-indigo-100 text-indigo-800',
       iconBg: 'from-indigo-50 to-sky-100/60',
       iconBorder: 'border-indigo-200',
+      roles: ['Administrador', 'Doctor'],
       icon: (
         <div className="relative w-16 h-16 flex items-center justify-center">
           <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center shadow-md shadow-sky-500/25">
@@ -120,6 +157,7 @@ export const DashboardGrid: React.FC<DashboardGridProps> = ({ onNavigate, stats 
       badgeColor: 'bg-amber-100 text-amber-800',
       iconBg: 'from-amber-50 to-orange-100/60',
       iconBorder: 'border-amber-200',
+      roles: ['Administrador', 'Doctor'],
       icon: (
         <div className="relative w-16 h-16 flex items-center justify-center">
           <div className="w-13 h-13 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-md shadow-amber-500/20 text-white">
@@ -137,6 +175,7 @@ export const DashboardGrid: React.FC<DashboardGridProps> = ({ onNavigate, stats 
       badgeColor: 'bg-red-100 text-red-800',
       iconBg: 'from-red-50 to-rose-100/60',
       iconBorder: 'border-red-200',
+      roles: ['Administrador', 'Doctor'],
       icon: (
         <div className="relative w-16 h-16 flex items-center justify-center">
           <div className="w-13 h-13 rounded-xl bg-gradient-to-tr from-red-600 to-rose-500 flex items-center justify-center shadow-md shadow-red-600/30 text-white animate-pulse">
@@ -147,13 +186,14 @@ export const DashboardGrid: React.FC<DashboardGridProps> = ({ onNavigate, stats 
     },
     {
       id: 'surgery' as ActiveView,
-      title: 'Quirófano Ocular',
+      title: userRole === 'Doctor' ? 'Mis Cirugías' : 'Quirófano Ocular',
       subtitle: 'Operation Theatre',
       desc: 'Facoemulsificación, LASIK, vitrectomía',
       badge: `${stats.activeSurgeries} Programadas`,
       badgeColor: 'bg-purple-100 text-purple-800',
       iconBg: 'from-purple-50 to-fuchsia-100/60',
       iconBorder: 'border-purple-200',
+      roles: ['Administrador', 'Doctor'],
       icon: (
         <div className="relative w-16 h-16 flex items-center justify-center">
           <div className="w-13 h-13 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-600 flex items-center justify-center shadow-md shadow-purple-600/25 text-white">
@@ -171,6 +211,7 @@ export const DashboardGrid: React.FC<DashboardGridProps> = ({ onNavigate, stats 
       badgeColor: 'bg-blue-100 text-blue-800',
       iconBg: 'from-blue-50 to-cyan-100/60',
       iconBorder: 'border-blue-200',
+      roles: ['Administrador'],
       icon: (
         <div className="relative w-16 h-16 flex items-center justify-center">
           <div className="w-13 h-13 rounded-xl bg-gradient-to-tr from-blue-600 to-cyan-600 flex items-center justify-center shadow-md shadow-blue-600/25 text-white">
@@ -188,6 +229,7 @@ export const DashboardGrid: React.FC<DashboardGridProps> = ({ onNavigate, stats 
       badgeColor: 'bg-teal-100 text-teal-800',
       iconBg: 'from-teal-50 to-emerald-100/60',
       iconBorder: 'border-teal-200',
+      roles: ['Administrador', 'Doctor'],
       icon: (
         <div className="relative w-16 h-16 flex items-center justify-center">
           <div className="w-13 h-13 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center shadow-md shadow-teal-500/25 text-white">
@@ -205,6 +247,7 @@ export const DashboardGrid: React.FC<DashboardGridProps> = ({ onNavigate, stats 
       badgeColor: 'bg-cyan-100 text-cyan-800',
       iconBg: 'from-cyan-50 to-sky-100/60',
       iconBorder: 'border-cyan-200',
+      roles: ['Administrador', 'Doctor'],
       icon: (
         <div className="relative w-16 h-16 flex items-center justify-center">
           <div className="w-13 h-13 rounded-xl bg-gradient-to-tr from-cyan-600 to-sky-500 flex items-center justify-center shadow-md shadow-cyan-600/25 text-white">
@@ -222,6 +265,7 @@ export const DashboardGrid: React.FC<DashboardGridProps> = ({ onNavigate, stats 
       badgeColor: 'bg-rose-100 text-rose-800',
       iconBg: 'from-rose-50 to-pink-100/60',
       iconBorder: 'border-rose-200',
+      roles: ['Administrador'],
       icon: (
         <div className="relative w-16 h-16 flex items-center justify-center">
           <div className="w-13 h-13 rounded-xl bg-gradient-to-br from-rose-500 to-pink-600 flex items-center justify-center shadow-md shadow-rose-500/25 text-white">
@@ -239,6 +283,7 @@ export const DashboardGrid: React.FC<DashboardGridProps> = ({ onNavigate, stats 
       badgeColor: 'bg-slate-100 text-slate-800',
       iconBg: 'from-slate-50 to-slate-200/60',
       iconBorder: 'border-slate-300',
+      roles: ['Administrador', 'Doctor'],
       icon: (
         <div className="relative w-16 h-16 flex items-center justify-center">
           <div className="w-13 h-13 rounded-xl bg-gradient-to-tr from-slate-700 to-slate-900 flex items-center justify-center shadow-md shadow-slate-700/25 text-white">
@@ -256,6 +301,7 @@ export const DashboardGrid: React.FC<DashboardGridProps> = ({ onNavigate, stats 
       badgeColor: 'bg-emerald-100 text-emerald-800',
       iconBg: 'from-emerald-50 to-green-100/60',
       iconBorder: 'border-emerald-200',
+      roles: ['Administrador'],
       icon: (
         <div className="relative w-16 h-16 flex items-center justify-center">
           <div className="w-13 h-13 rounded-xl bg-gradient-to-br from-emerald-600 to-teal-600 flex items-center justify-center shadow-md shadow-emerald-600/25 text-white">
@@ -273,6 +319,7 @@ export const DashboardGrid: React.FC<DashboardGridProps> = ({ onNavigate, stats 
       badgeColor: 'bg-sky-100 text-sky-800',
       iconBg: 'from-sky-50 to-indigo-100/60',
       iconBorder: 'border-sky-200',
+      roles: ['Administrador'],
       icon: (
         <div className="relative w-16 h-16 flex items-center justify-center">
           <div className="w-13 h-13 rounded-xl bg-gradient-to-tr from-sky-600 to-indigo-600 flex items-center justify-center shadow-md shadow-sky-600/25 text-white">
@@ -290,6 +337,7 @@ export const DashboardGrid: React.FC<DashboardGridProps> = ({ onNavigate, stats 
       badgeColor: 'bg-pink-100 text-pink-800',
       iconBg: 'from-pink-50 to-rose-100/60',
       iconBorder: 'border-pink-200',
+      roles: ['Administrador'],
       icon: (
         <div className="relative w-16 h-16 flex items-center justify-center">
           <div className="w-13 h-13 rounded-xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center shadow-md shadow-pink-500/25 text-white">
@@ -307,6 +355,7 @@ export const DashboardGrid: React.FC<DashboardGridProps> = ({ onNavigate, stats 
       badgeColor: 'bg-slate-100 text-slate-800',
       iconBg: 'from-slate-50 to-zinc-100/60',
       iconBorder: 'border-slate-300',
+      roles: ['Administrador'],
       icon: (
         <div className="relative w-16 h-16 flex items-center justify-center">
           <div className="w-13 h-13 rounded-xl bg-gradient-to-tr from-slate-600 to-zinc-700 flex items-center justify-center shadow-md shadow-slate-600/25 text-white">
@@ -324,6 +373,7 @@ export const DashboardGrid: React.FC<DashboardGridProps> = ({ onNavigate, stats 
       badgeColor: 'bg-amber-100 text-amber-800',
       iconBg: 'from-amber-50 to-yellow-100/60',
       iconBorder: 'border-amber-200',
+      roles: ['Administrador', 'Doctor'],
       icon: (
         <div className="relative w-16 h-16 flex items-center justify-center">
           <div className="w-13 h-13 rounded-xl bg-gradient-to-br from-amber-500 to-yellow-600 flex items-center justify-center shadow-md shadow-amber-500/25 text-white">
@@ -341,6 +391,7 @@ export const DashboardGrid: React.FC<DashboardGridProps> = ({ onNavigate, stats 
       badgeColor: 'bg-emerald-100 text-emerald-800',
       iconBg: 'from-emerald-50 to-teal-100/60',
       iconBorder: 'border-emerald-200',
+      roles: ['Administrador', 'Doctor'],
       icon: (
         <div className="relative w-16 h-16 flex items-center justify-center">
           <div className="w-13 h-13 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-600 flex items-center justify-center shadow-md shadow-emerald-500/25 text-white">
@@ -358,6 +409,7 @@ export const DashboardGrid: React.FC<DashboardGridProps> = ({ onNavigate, stats 
       badgeColor: 'bg-slate-100 text-slate-800',
       iconBg: 'from-slate-50 to-slate-200/60',
       iconBorder: 'border-slate-300',
+      roles: ['Administrador'],
       icon: (
         <div className="relative w-16 h-16 flex items-center justify-center">
           <div className="w-13 h-13 rounded-xl bg-gradient-to-br from-slate-700 to-cyan-800 flex items-center justify-center shadow-md shadow-slate-700/25 text-white">
@@ -368,24 +420,36 @@ export const DashboardGrid: React.FC<DashboardGridProps> = ({ onNavigate, stats 
     }
   ];
 
+  const visibleModules = modules.filter(m => m.roles.includes(userRole));
+
   return (
     <div className="p-4 md:p-6 lg:p-8 max-w-[1520px] mx-auto space-y-6">
       {/* Banner / Overview Header */}
       <div className="bg-gradient-to-r from-sky-700 via-sky-600 to-cyan-600 rounded-2xl p-5 md:p-6 text-white shadow-lg shadow-sky-900/10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-white/20 backdrop-blur-xs text-white uppercase tracking-wider">
-              Portal Oftalmológico Hospitalario
+              {userRole === 'Administrador'
+                ? 'Modo Administrador · Control Global'
+                : userRole === 'Doctor'
+                  ? `Vista Privada del Especialista · ${userDisplayName}`
+                  : 'Módulo de Óptica · Operador'}
             </span>
             <span className="text-xs text-sky-100">
-              Jornada Quirúrgica y Consultas Activas
+              {userRole === 'Doctor'
+                ? 'Solo se muestran sus citas, pacientes y cirugías'
+                : 'Jornada Quirúrgica, Consultas y Óptica'}
             </span>
           </div>
           <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight mt-1">
-            Panel de Control General · eHospital
+            {userRole === 'Doctor'
+              ? `Mi Gabinete Oftalmológico · ${userDisplayName}`
+              : 'Panel de Control General · eHospital'}
           </h1>
           <p className="text-sm text-sky-100/90 max-w-2xl mt-1">
-            Seleccione el módulo clínico o administrativo para iniciar la atención del paciente, registro oftalmológico o programación de quirófano.
+            {userRole === 'Doctor'
+              ? 'Gestione exclusivamente su agenda de consultas, sus pacientes asignados, expedientes clínicos y parte quirúrgico.'
+              : 'Seleccione el módulo clínico, de óptica o administrativo para iniciar la gestión hospitalaria.'}
           </p>
         </div>
 
@@ -393,11 +457,11 @@ export const DashboardGrid: React.FC<DashboardGridProps> = ({ onNavigate, stats 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full md:w-auto">
           <div className="bg-white/10 backdrop-blur-md px-3.5 py-2 rounded-xl text-center border border-white/10">
             <div className="text-lg font-black tabular-nums">{stats.appointmentsCount}</div>
-            <div className="text-[11px] text-sky-100">Citas Hoy</div>
+            <div className="text-[11px] text-sky-100">{userRole === 'Doctor' ? 'Mis Citas' : 'Citas Hoy'}</div>
           </div>
           <div className="bg-white/10 backdrop-blur-md px-3.5 py-2 rounded-xl text-center border border-white/10">
             <div className="text-lg font-black tabular-nums">{stats.activeSurgeries}</div>
-            <div className="text-[11px] text-sky-100">Cirugías</div>
+            <div className="text-[11px] text-sky-100">{userRole === 'Doctor' ? 'Mis Cirugías' : 'Cirugías'}</div>
           </div>
           <div className="bg-white/10 backdrop-blur-md px-3.5 py-2 rounded-xl text-center border border-white/10">
             <div className="text-lg font-black tabular-nums text-red-200">{stats.emergenciesCount}</div>
@@ -405,14 +469,14 @@ export const DashboardGrid: React.FC<DashboardGridProps> = ({ onNavigate, stats 
           </div>
           <div className="bg-white/10 backdrop-blur-md px-3.5 py-2 rounded-xl text-center border border-white/10">
             <div className="text-lg font-black tabular-nums text-emerald-200">{stats.patientsCount}</div>
-            <div className="text-[11px] text-emerald-100">Pacientes</div>
+            <div className="text-[11px] text-emerald-100">{userRole === 'Doctor' ? 'Mis Pacientes' : 'Pacientes'}</div>
           </div>
         </div>
       </div>
 
-      {/* Grid of 18 Modules replicating the user's provided UI design */}
+      {/* Grid of Modules */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3.5 md:gap-4.5">
-        {modules.map((m) => (
+        {visibleModules.map((m) => (
           <button
             key={m.id}
             onClick={() => onNavigate(m.id)}
